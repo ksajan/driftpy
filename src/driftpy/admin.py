@@ -106,6 +106,7 @@ class Admin(ClearingHouse):
         margin_ratio_maintenance: int = 500,
         liquidation_fee: int = 0,
         active_status: bool = True,
+        name: list = [0] * 32
     ) -> TransactionSignature:
         state_public_key = get_state_public_key(self.program.program_id)
         state = await get_state_account(self.program)
@@ -124,6 +125,7 @@ class Admin(ClearingHouse):
             margin_ratio_maintenance,
             liquidation_fee,
             active_status,
+            name,
             ctx=Context(
                 accounts={
                     "admin": self.authority,
@@ -209,6 +211,22 @@ class Admin(ClearingHouse):
             ),
         )
 
+    async def update_perp_market_curve_update_intensity(
+        self, market_index: int, curve_update_intensity: int, 
+    ):
+        assert(curve_update_intensity >=0 and curve_update_intensity <= 100)
+        market_public_key = get_perp_market_public_key(self.program_id, market_index)
+        return await self.program.rpc["update_perp_market_curve_update_intensity"](
+            curve_update_intensity,
+            ctx=Context(
+                accounts={
+                    "admin": self.authority,
+                    "state": get_state_public_key(self.program_id),
+                    "perp_market": market_public_key,
+                }
+            ),
+        )
+
     async def update_perp_market_max_fill_reserve_fraction(
         self, market_index: int, max_fill_reserve_fraction: int, 
     ):
@@ -224,9 +242,9 @@ class Admin(ClearingHouse):
             ),
         )
 
-    async def update_perp_market_lp_cooldown_time(self, duration: int, market_index: int):
+    async def update_lp_cooldown_time(self, duration: int, market_index: int):
         market_public_key = get_perp_market_public_key(self.program_id, market_index)
-        return await self.program.rpc["update_perp_market_lp_cooldown_time"](
+        return await self.program.rpc["update_lp_cooldown_time"](
             duration,
             ctx=Context(
                 accounts={
